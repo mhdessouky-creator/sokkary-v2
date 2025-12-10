@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Phase 2: Core Multi-Agent Architecture ✅ (2025-12-10)
+
+#### Added
+- BaseAgent abstract class with multi-model support
+- OrchestratorAgent for task analysis and routing
+- PlannerAgent for execution planning
+- ExecutorAgent for plan execution
+- ValidatorAgent for output validation
+- AgentWorkflow with LangGraph sequential coordination
+- AgentState and WorkflowState models
+- State management with checkpoints
+- Streaming workflow support
+- Interactive example with 5 modes
+- Integration test suite (5/5 passing)
+
+#### Models Supported
+- Kimi K2 (primary, pre-configured)
+- Claude (optional)
+- Groq (optional)
+- OpenAI (optional)
+
+### Phase 1: Foundation & Repository Setup ✅ (2025-12-10)
+
+#### Added
 - Initial project structure
 - Configuration system with pydantic-settings
 - Logger setup with loguru
