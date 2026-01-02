@@ -20,8 +20,14 @@ if [ -f "requirements.txt" ]; then
     echo "Installing requirements from requirements.txt..."
     pip install -r requirements.txt
 else
-    echo "requirements.txt not found. Installing manually..."
-    pip install python-dotenv g4f google-generativeai requests
+    echo "requirements.txt not found. Installing base dependencies manually..."
+    pip install python-dotenv g4f google-generativeai
+fi
+
+# Install AI Agent specific requirements if present
+if [ -f "ai_agent/requirements.txt" ]; then
+    echo "Installing AI Agent specific requirements..."
+    pip install -r ai_agent/requirements.txt
 fi
 
 # Create directories if they don't exist
