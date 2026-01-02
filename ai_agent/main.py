@@ -45,15 +45,26 @@ async def main():
 
             if analysis.get("action") == "code":
                 print("⚙️  Detecting code execution request...")
-                # In a real system, we'd extract the code from the LLM response
-                # For now, let's ask Gemini to generate the code first
-                code_prompt = f"Write python code for: {user_input}. Only provide the code, no markdown."
-                code_resp = await gemini.process_request(code_prompt)
+
+                # Extract code from the initial analysis
+                code_to_run = analysis.get("code", "")
+
+                if not code_to_run:
+                    # Fallback if code wasn't provided in the analysis
+                    print("⚠️ Code not found in analysis. Requesting code generation...")
+                    code_prompt = f"Write python code for: {user_input}. Only provide the code, no markdown."
+                    code_resp = await gemini.process_request(code_prompt)
+                    code_to_run = code_resp
 
                 # Clean up code block markers if present
-                code_to_run = code_resp.replace("```python", "").replace("```", "").strip()
+                code_to_run = code_to_run.replace("```python", "").replace("```", "").strip()
 
                 print(f"📄 Generated Code:\n{code_to_run}\n")
+
+                # If there's an accompanying response, show it
+                if analysis.get("response"):
+                     print(f"🤖 Gemini: {analysis.get('response')}\n")
+
                 confirm = input("Execute this code? (y/n): ")
                 if confirm.lower() == 'y':
                     result = executor.execute_python(code_to_run)
