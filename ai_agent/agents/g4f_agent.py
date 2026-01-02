@@ -6,7 +6,8 @@ class G4FAgent:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         # Default to a robust provider/model if possible, or let g4f decide
-        self.provider = g4f.Provider.Bing
+        # g4f.Provider.Bing was deprecated or removed, relying on auto selection or Bing (lowercase) if needed
+        self.provider = None
 
     async def generate_response(self, prompt: str) -> str:
         """
