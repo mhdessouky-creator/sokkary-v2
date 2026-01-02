@@ -12,6 +12,7 @@ from agents.gemini_orchestrator import GeminiOrchestrator
 from agents.code_executor import CodeExecutor
 from handlers.session_manager import SessionManager
 from handlers.export_handler import ExportHandler
+from handlers.router import Router
 
 # Setup logging
 Config.setup_logging()
@@ -27,6 +28,7 @@ async def main():
     executor = CodeExecutor()
     session = SessionManager()
     exporter = ExportHandler()
+    router = Router(gemini)
 
     print("Type 'exit' or 'quit' to stop.")
 
@@ -36,18 +38,24 @@ async def main():
             if user_input.lower() in ["exit", "quit"]:
                 break
 
-            # Simple routing logic (can be enhanced)
-            # 1. Ask Gemini to analyze intent
-            analysis = await gemini.analyze_task(user_input)
+            # Enhanced routing logic
+            analysis = await router.route(user_input)
 
             response = ""
             agent_name = "System"
+            action = analysis.get("action")
+            reasoning = analysis.get("reasoning", "")
 
-            if analysis.get("action") == "code":
-                print("⚙️  Detecting code execution request...")
-                # In a real system, we'd extract the code from the LLM response
-                # For now, let's ask Gemini to generate the code first
-                code_prompt = f"Write python code for: {user_input}. Only provide the code, no markdown."
+            if reasoning:
+                logger.info(f"Routing decision: {action} - {reasoning}")
+
+            if action == "code":
+                print(f"⚙️  Code execution request detected: {reasoning}")
+
+                suggested_desc = analysis.get("suggested_description", user_input)
+
+                # Ask Gemini to generate the code based on the refined description
+                code_prompt = f"Write python code for: {suggested_desc}. Only provide the code, no markdown."
                 code_resp = await gemini.process_request(code_prompt)
 
                 # Clean up code block markers if present
