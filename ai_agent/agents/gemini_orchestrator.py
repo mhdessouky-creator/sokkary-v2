@@ -50,12 +50,14 @@ class GeminiOrchestrator:
         Available Actions:
         - CHAT: For general conversation, questions, or explanations that do not require running code.
         - CODE: If the user wants to calculate something, manipulate files, analyze data, or run a specific algorithm.
+        - TOOL: If the user specifically asks for FPL (Fantasy Premier League) news or football updates.
 
         User Request: {task_description}
 
         Respond with a pure JSON object (no markdown formatting) with the following schema:
         {{
-          "action": "CHAT" | "CODE",
+          "action": "CHAT" | "CODE" | "TOOL",
+          "tool_name": "fpl_news" (only if action is TOOL),
           "reasoning": "Brief explanation of why this action was chosen",
           "suggested_description": "Refined description of the code task if action is CODE (optional)"
         }}
@@ -67,8 +69,9 @@ class GeminiOrchestrator:
             # clean up markdown if present
             if text_response.startswith("```json"):
                 text_response = text_response[7:]
-            if text_response.startswith("```"):
+            elif text_response.startswith("```"):
                 text_response = text_response[3:]
+
             if text_response.endswith("```"):
                 text_response = text_response[:-3]
 
@@ -76,6 +79,7 @@ class GeminiOrchestrator:
                 data = json.loads(text_response.strip())
                 return {
                     "action": data.get("action", "CHAT").lower(),
+                    "tool_name": data.get("tool_name", ""),
                     "reasoning": data.get("reasoning", ""),
                     "suggested_description": data.get("suggested_description", task_description),
                     "original_response": text_response
@@ -83,7 +87,10 @@ class GeminiOrchestrator:
             except json.JSONDecodeError:
                 self.logger.warning(f"Failed to parse JSON from Gemini: {text_response}")
                 # Fallback to simple keyword detection
-                if "CODE" in text_response.upper():
+                upper_response = text_response.upper()
+                if "TOOL" in upper_response or "FPL" in upper_response:
+                    return {"action": "tool", "tool_name": "fpl_news", "original_response": text_response}
+                if "CODE" in upper_response:
                      return {"action": "code", "original_response": text_response}
                 return {"action": "chat", "original_response": text_response}
 

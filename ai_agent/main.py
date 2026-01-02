@@ -13,6 +13,7 @@ from agents.code_executor import CodeExecutor
 from handlers.session_manager import SessionManager
 from handlers.export_handler import ExportHandler
 from handlers.router import Router
+from tools.fpl_tool import FPLTool
 
 # Setup logging
 Config.setup_logging()
@@ -29,6 +30,9 @@ async def main():
     session = SessionManager()
     exporter = ExportHandler()
     router = Router(gemini)
+
+    # Initialize Tools
+    fpl_tool = FPLTool()
 
     print("Type 'exit' or 'quit' to stop.")
 
@@ -69,6 +73,17 @@ async def main():
                     agent_name = "CodeExecutor"
                 else:
                     response = "Execution cancelled."
+
+            elif action == "tool":
+                tool_name = analysis.get("tool_name")
+                print(f"🛠️  Tool usage detected: {tool_name}")
+
+                if tool_name == "fpl_news":
+                    response = fpl_tool.get_news()
+                    agent_name = "FPL Tool"
+                else:
+                    response = f"Unknown tool: {tool_name}"
+                    agent_name = "System"
 
             else:
                 # Chat with Gemini or fallback to G4F
