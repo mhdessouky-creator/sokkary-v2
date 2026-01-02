@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import logging
 import asyncio
+import json
 from config.config import Config
 
 class GeminiOrchestrator:
@@ -38,21 +39,54 @@ class GeminiOrchestrator:
     async def analyze_task(self, task_description: str) -> dict:
         """
         Analyzes a task to decide if it needs code execution or other agents.
-        Returns a structured decision (simulated here as we expect JSON or text analysis).
+        Returns a structured decision using JSON parsing.
         """
         if not self.configured:
             return {"action": "error", "details": "Gemini not configured"}
 
         prompt = f"""
-        Analyze the following user request and decide if it requires code execution.
-        Request: {task_description}
+        You are an AI assistant orchestrator. Your job is to analyze the user's request and determine the best course of action.
 
-        Respond with 'CODE' if it needs code execution, or 'CHAT' if it's a conversational query.
+        Available Actions:
+        - CHAT: For general conversation, questions, or explanations that do not require running code.
+        - CODE: If the user wants to calculate something, manipulate files, analyze data, or run a specific algorithm.
+
+        User Request: {task_description}
+
+        Respond with a pure JSON object (no markdown formatting) with the following schema:
+        {{
+          "action": "CHAT" | "CODE",
+          "reasoning": "Brief explanation of why this action was chosen",
+          "suggested_description": "Refined description of the code task if action is CODE (optional)"
+        }}
         """
         try:
             response = await self.model.generate_content_async(prompt)
-            decision = response.text.strip().upper()
-            return {"action": "code" if "CODE" in decision else "chat", "original_response": response.text}
+            text_response = response.text.strip()
+
+            # clean up markdown if present
+            if text_response.startswith("```json"):
+                text_response = text_response[7:]
+            if text_response.startswith("```"):
+                text_response = text_response[3:]
+            if text_response.endswith("```"):
+                text_response = text_response[:-3]
+
+            try:
+                data = json.loads(text_response.strip())
+                return {
+                    "action": data.get("action", "CHAT").lower(),
+                    "reasoning": data.get("reasoning", ""),
+                    "suggested_description": data.get("suggested_description", task_description),
+                    "original_response": text_response
+                }
+            except json.JSONDecodeError:
+                self.logger.warning(f"Failed to parse JSON from Gemini: {text_response}")
+                # Fallback to simple keyword detection
+                if "CODE" in text_response.upper():
+                     return {"action": "code", "original_response": text_response}
+                return {"action": "chat", "original_response": text_response}
+
         except Exception as e:
             self.logger.error(f"Task Analysis Error: {e}")
             return {"action": "chat", "error": str(e)}
