@@ -17,11 +17,8 @@ python -m pip install --upgrade pip
 
 # Install Python dependencies
 if [ -f "requirements.txt" ]; then
-    echo "Installing requirements from requirements.txt..."
+    echo "Installing requirements from root requirements.txt..."
     pip install -r requirements.txt
-else
-    echo "requirements.txt not found. Installing base dependencies manually..."
-    pip install python-dotenv g4f google-generativeai
 fi
 
 # Install AI Agent specific requirements if present
